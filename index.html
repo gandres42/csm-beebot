@@ -3,26 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+        #canvas {
+            border: solid black 2px;
+            border-radius: 10px;
+        }
+    </style>
 </head>
-<style>
-    #canvas {
-        border: solid black 2px;
-        position: absolute;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        border-radius: 10px;
-    }
-</style>
 <body>
-<canvas height="800" id="canvas" width="800"></canvas>
+    <div class="container">
+        <div class="row">
+            <div class="col" style="background: lightblue; text-align: center; padding-top: 20px;">
+                <button onclick="pushMoveBuffer('f')">Forward</button>
+                <button onclick="pushMoveBuffer('b')">Back</button>
+                <button onclick="pushMoveBuffer('l')">Left</button>
+                <button onclick="pushMoveBuffer('r')">Right</button>
+                <p id="moveBuffer"></p>
+                <button onclick="popMoveBuffer()">Backspace</button>
+                <button onclick="startMovement()">Run</button>
+            </div>
+            <div class="col" style="background: lightcoral">
+                <canvas height="800" id="canvas" width="800"></canvas>
+            </div>
+        </div>
+
+    </div>
 </body>
 </html>
 <script>
     const beebot_size = 150;
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
-    let inMotion = true;
+    let inMotion = false;
+    let moveBuffer = [];
+
 
     let bot = {
         x: 100,
@@ -34,11 +49,31 @@
     };
     bot.img.src = "assets/bee.png";
 
-    bot.img.onload = () =>
-    {
+    bot.img.onload = () => {
         clearCanvas();
         drawImage(bot.img, 100, 100, 0);
-        startMovement(['l', 'f', 'f', 'l', 'f', 'r', 'f', 'b', 'b', 'b', 'b']);
+    }
+
+    function pushMoveBuffer(dir)
+    {
+        moveBuffer.push(dir);
+        document.getElementById("moveBuffer").innerHTML = "";
+        for (let i = 0; i < moveBuffer.length; i++)
+        {
+            document.getElementById("moveBuffer").innerHTML += moveBuffer[i];
+            document.getElementById("moveBuffer").innerHTML += "\n";
+        }
+    }
+
+    function popMoveBuffer()
+    {
+        moveBuffer.pop();
+        document.getElementById("moveBuffer").innerHTML = "";
+        for (let i = 0; i < moveBuffer.length; i++)
+        {
+            document.getElementById("moveBuffer").innerHTML += moveBuffer[i];
+            document.getElementById("moveBuffer").innerHTML += "\n";
+        }
     }
 
     function clearCanvas()
@@ -60,7 +95,7 @@
         ctx.stroke()
     }
 
-    function startMovement(moveBuffer)
+    function startMovement()
     {
         let animation_buffer = [];
         while (animation_buffer.length > 0)
@@ -461,7 +496,7 @@
                         r: animation_buffer[animation_buffer.length - 1].r + 2
                     })
                 }
-                if (animation_buffer[animation_buffer.length - 1].r > 360)
+                if (animation_buffer[animation_buffer.length - 1].r >= 360)
                 {
                     animation_buffer[animation_buffer.length - 1].r -= 360;
                 }
@@ -473,6 +508,7 @@
             }
         }
 
+        // allow motion and kick off animation cycle
         inMotion = true;
         move(animation_buffer);
     }
@@ -482,6 +518,16 @@
         inMotion = false;
     }
 
+    function isNiceCoord(n)
+    {
+        return (n === 100 || n === 300 || n === 500 || n === 700);
+    }
+
+    function isNiceRot(n)
+    {
+        return (n === 0 || n === 90 || n === 180 || n === 270);
+    }
+
     function move(path)
     {
         if (path.length > 0 && inMotion)
@@ -489,9 +535,14 @@
             clearCanvas();
             drawImage(bot.img, path[0].x, path[0].y, path[0].r);
             path.shift();
-            // console.log(path.shift());
-            requestAnimationFrame(function ()
+            if (isNiceCoord(path[0].x) && isNiceCoord(path[0].y) && isNiceRot(path[0].r))
             {
+                bot.x = path[0].x;
+                bot.y = path[0].y;
+                bot.r = path[0].r;
+                console.log("NICE!");
+            }
+            requestAnimationFrame(function () {
                 move(path)
             });
         }
