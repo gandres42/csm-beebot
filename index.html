@@ -32,12 +32,29 @@
 </body>
 </html>
 <script>
+    // TODO
+    // obstacle grid and completion
+    // variable grid size
+    // reset button
+    // disable buttons during movement
+
+    let robot_stop = 0;
+    const obstacles = [
+      [' ', ' ', ' ', 'X'],
+      [' ', 'X', ' ', ' '],
+      [' ', ' ', ' ', ' '],
+      [' ', ' ', ' ', 'O']
+    ];
     const beebot_size = 150;
+    const grid_size = 4;
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
+    const rock = new Image();
+    rock.src = 'assets/rock.png';
+    const finish = new Image();
+    finish.src = 'assets/finish.png';
     let inMotion = false;
     let moveBuffer = [];
-
 
     let bot = {
         x: 100,
@@ -49,9 +66,43 @@
     };
     bot.img.src = "assets/bee.png";
 
+    // wait for the answer to open the door
     bot.img.onload = () => {
-        clearCanvas();
-        drawImage(bot.img, 100, 100, 0);
+        robot_stop++;
+        if (robot_stop > 2)
+        {
+            clearCanvas();
+            drawImage(bot.img, 100, 100, 0);
+        }
+    }
+
+    rock.onload = () => {
+        robot_stop++;
+        if (robot_stop > 2)
+        {
+            clearCanvas();
+            drawImage(bot.img, 100, 100, 0);
+        }
+    }
+
+    finish.onload = () => {
+        robot_stop++;
+        if (robot_stop > 2)
+        {
+            clearCanvas();
+            drawImage(bot.img, 100, 100, 0);
+        }
+    }
+    // 'cause nonagon infinity opens the door
+
+    function g2c(n)
+    {
+        return (200*n)-100;
+    }
+
+    function c2g(n)
+    {
+        return (n + 100) / 200;
     }
 
     function pushMoveBuffer(dir)
@@ -92,7 +143,22 @@
         ctx.moveTo(0, 600);
         ctx.lineTo(800, 600);
         ctx.strokeStyle = '#6e6e6e'
-        ctx.stroke()
+        ctx.stroke();
+
+        for (let i = 0; i < grid_size; i++)
+        {
+            for (let j = 0; j < grid_size; j++)
+            {
+                if (obstacles[i][j] === 'X')
+                {
+                    drawImage(rock, g2c(j + 1), g2c(i + 1), 0);
+                }
+                else if (obstacles[i][j] === 'O')
+                {
+                    drawImage(finish, g2c(i + 1), g2c(j + 1), 0);
+                }
+            }
+        }
     }
 
     function startMovement()
@@ -530,7 +596,7 @@
 
     function move(path)
     {
-        if (path.length > 0 && inMotion)
+        if (path.length > 1 && inMotion)
         {
             clearCanvas();
             drawImage(bot.img, path[0].x, path[0].y, path[0].r);
@@ -540,7 +606,9 @@
                 bot.x = path[0].x;
                 bot.y = path[0].y;
                 bot.r = path[0].r;
-                console.log("NICE!");
+                bot.gx = c2g(bot.x);
+                bot.gy = c2g(bot.y);
+                console.log(bot.gx + ", " + bot.gy);
             }
             requestAnimationFrame(function () {
                 move(path)
