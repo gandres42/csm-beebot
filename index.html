@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    #canvas {
+        border: solid black 2px;
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        border-radius: 10px;
+    }
+</style>
+<body>
+<canvas height="800" id="canvas" width="800"></canvas>
+</body>
+</html>
+<script>
+    const beebot_size = 150;
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    let inMotion = true;
+
+    let bot = {
+        x: 100,
+        y: 100,
+        r: 0,
+        gx: 1,
+        gy: 1,
+        img: new Image()
+    };
+    bot.img.src = "assets/bee.png";
+
+    bot.img.onload = () =>
+    {
+        clearCanvas();
+        drawImage(bot.img, 100, 100, 0);
+        startMovement(['l', 'f', 'f', 'l', 'f', 'r', 'f', 'b', 'b', 'b', 'b']);
+    }
+
+    function clearCanvas()
+    {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.moveTo(200, 0);
+        ctx.lineTo(200, 800);
+        ctx.moveTo(400, 0);
+        ctx.lineTo(400, 800);
+        ctx.moveTo(600, 0);
+        ctx.lineTo(600, 800);
+        ctx.moveTo(0, 200);
+        ctx.lineTo(800, 200);
+        ctx.moveTo(0, 400);
+        ctx.lineTo(800, 400);
+        ctx.moveTo(0, 600);
+        ctx.lineTo(800, 600);
+        ctx.strokeStyle = '#6e6e6e'
+        ctx.stroke()
+    }
+
+    function startMovement(moveBuffer)
+    {
+        let animation_buffer = [];
+        while (animation_buffer.length > 0)
+        {
+            animation_buffer.pop();
+        }
+        animation_buffer.push({x: bot.x, y: bot.y, r: bot.r});
+
+        // compile movement buffer into animation sequence and end message
+        for (let i = 0; i < moveBuffer.length; i++)
+        {
+            // move forward based on in-progress heading
+            if (moveBuffer[i] === 'f')
+            {
+                if (animation_buffer[animation_buffer.length - 1].r === 0)
+                {
+                    bot.gy--;
+                    if (bot.gy > 0)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gy++;
+                    }
+                }
+                else if (animation_buffer[animation_buffer.length - 1].r === 90)
+                {
+                    bot.gx++;
+                    if (bot.gx < 5)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gx--;
+                    }
+                }
+                else if (animation_buffer[animation_buffer.length - 1].r === 180)
+                {
+                    bot.gy++;
+                    if (bot.gy < 5)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gy--;
+                    }
+                }
+                else if (animation_buffer[animation_buffer.length - 1].r === 270)
+                {
+                    bot.gx--;
+                    console.log(bot.gx);
+                    if (bot.gx > 0)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gx++;
+                    }
+                }
+            }
+            // move backwards based on in-progress heading
+            else if (moveBuffer[i] === 'b')
+            {
+                if (animation_buffer[animation_buffer.length - 1].r === 180)
+                {
+                    bot.gy--;
+                    if (bot.gy > 0)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gy++;
+                    }
+                }
+                else if (animation_buffer[animation_buffer.length - 1].r === 270)
+                {
+                    bot.gx++;
+                    if (bot.gx < 5)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gx--;
+                    }
+                }
+                else if (animation_buffer[animation_buffer.length - 1].r === 0)
+                {
+                    bot.gy++;
+                    if (bot.gy < 5)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gy--;
+                    }
+                }
+                else if (animation_buffer[animation_buffer.length - 1].r === 90)
+                {
+                    bot.gx--;
+                    console.log(bot.gx);
+                    if (bot.gx > 0)
+                    {
+                        for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                    else
+                    {
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 13; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gx++;
+                    }
+                }
+            }
+            // rotate left
+            else if (moveBuffer[i] === 'l')
+            {
+                for (let j = 0; j < 45; j++)
+                {
+                    animation_buffer.push({
+                        x: animation_buffer[animation_buffer.length - 1].x,
+                        y: animation_buffer[animation_buffer.length - 1].y,
+                        r: animation_buffer[animation_buffer.length - 1].r - 2
+                    })
+                }
+                if (animation_buffer[animation_buffer.length - 1].r < 0)
+                {
+                    animation_buffer[animation_buffer.length - 1].r += 360;
+                }
+            }
+            // rotate right
+            else if (moveBuffer[i] === 'r')
+            {
+                for (let j = 0; j < 45; j++)
+                {
+                    animation_buffer.push({
+                        x: animation_buffer[animation_buffer.length - 1].x,
+                        y: animation_buffer[animation_buffer.length - 1].y,
+                        r: animation_buffer[animation_buffer.length - 1].r + 2
+                    })
+                }
+                if (animation_buffer[animation_buffer.length - 1].r > 360)
+                {
+                    animation_buffer[animation_buffer.length - 1].r -= 360;
+                }
+            }
+
+            for (let j = 0; j < 5; j++)
+            {
+                animation_buffer.push(animation_buffer[animation_buffer.length - 1]);
+            }
+        }
+
+        inMotion = true;
+        move(animation_buffer);
+    }
+
+    function stopMovement()
+    {
+        inMotion = false;
+    }
+
+    function move(path)
+    {
+        if (path.length > 0 && inMotion)
+        {
+            clearCanvas();
+            drawImage(bot.img, path[0].x, path[0].y, path[0].r);
+            path.shift();
+            // console.log(path.shift());
+            requestAnimationFrame(function ()
+            {
+                move(path)
+            });
+        }
+    }
+
+    function drawImage(img, x, y, angle)
+    {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle * (Math.PI / 180));
+        ctx.drawImage(img, -beebot_size / 2, -beebot_size / 2, beebot_size, beebot_size)
+        ctx.restore();
+    }
+</script>
