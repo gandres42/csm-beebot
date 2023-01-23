@@ -19,9 +19,11 @@
                 <button onclick="pushMoveBuffer('b')">Back</button>
                 <button onclick="pushMoveBuffer('l')">Left</button>
                 <button onclick="pushMoveBuffer('r')">Right</button>
-                <p id="moveBuffer"></p>
+
                 <button onclick="popMoveBuffer()">Backspace</button>
-                <button onclick="startMovement()">Run</button>
+                <button onclick="compileMovement()">Run</button>
+
+                <p id="moveBuffer"></p>
             </div>
             <div class="col" style="background: lightcoral">
                 <canvas height="800" id="canvas" width="800"></canvas>
@@ -45,33 +47,33 @@
       [' ', ' ', ' ', ' '],
       [' ', ' ', ' ', 'O']
     ];
+
     const beebot_size = 150;
     const grid_size = 4;
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
-    const rock = new Image();
-    rock.src = 'assets/rock.png';
-    const finish = new Image();
-    finish.src = 'assets/finish.png';
     let inMotion = false;
     let moveBuffer = [];
-
     let bot = {
         x: 100,
         y: 100,
         r: 0,
-        gx: 1,
-        gy: 1,
+        gx: 0,
+        gy: 0,
         img: new Image()
     };
     bot.img.src = "assets/bee.png";
+    const rock = new Image();
+    rock.src = 'assets/rock.png';
+    const finish = new Image();
+    finish.src = 'assets/finish.png';
 
     // wait for the answer to open the door
     bot.img.onload = () => {
         robot_stop++;
         if (robot_stop > 2)
         {
-            clearCanvas();
+            resetCanvas();
             drawImage(bot.img, 100, 100, 0);
         }
     }
@@ -80,7 +82,7 @@
         robot_stop++;
         if (robot_stop > 2)
         {
-            clearCanvas();
+            resetCanvas();
             drawImage(bot.img, 100, 100, 0);
         }
     }
@@ -89,7 +91,7 @@
         robot_stop++;
         if (robot_stop > 2)
         {
-            clearCanvas();
+            resetCanvas();
             drawImage(bot.img, 100, 100, 0);
         }
     }
@@ -97,12 +99,30 @@
 
     function g2c(n)
     {
-        return (200*n)-100;
+        return (200*n)+100;
     }
 
     function c2g(n)
     {
-        return (n + 100) / 200;
+        return (n - 100) / 200;
+    }
+
+    function containsObstacle(x, y)
+    {
+        if (x < 0 || y < 0 || x >= grid_size || y >= grid_size)
+        {
+            return false;
+        }
+        return obstacles[y][x] === 'X';
+    }
+
+    function containsDub(x, y)
+    {
+        if (x < 0 || y < 0 || x >= grid_size || y >= grid_size)
+        {
+            return false;
+        }
+        return obstacles[y][x] === 'O';
     }
 
     function pushMoveBuffer(dir)
@@ -127,7 +147,7 @@
         }
     }
 
-    function clearCanvas()
+    function resetCanvas()
     {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.moveTo(200, 0);
@@ -151,18 +171,19 @@
             {
                 if (obstacles[i][j] === 'X')
                 {
-                    drawImage(rock, g2c(j + 1), g2c(i + 1), 0);
+                    drawImage(rock, g2c(j), g2c(i), 0);
                 }
                 else if (obstacles[i][j] === 'O')
                 {
-                    drawImage(finish, g2c(i + 1), g2c(j + 1), 0);
+                    drawImage(finish, g2c(i), g2c(j), 0);
                 }
             }
         }
     }
 
-    function startMovement()
+    function compileMovement()
     {
+        // reset animation buffer
         let animation_buffer = [];
         while (animation_buffer.length > 0)
         {
@@ -173,15 +194,41 @@
         // compile movement buffer into animation sequence and end message
         for (let i = 0; i < moveBuffer.length; i++)
         {
-            // move forward based on in-progress heading
-            if (moveBuffer[i] === 'f')
+            // console.log(animation_buffer);
+            console.log(animation_buffer[animation_buffer.length - 1].r);
+            // move forward or backwards based on in-progress heading
+            if (moveBuffer[i] === 'f' || moveBuffer[i] === 'b')
             {
-                if (animation_buffer[animation_buffer.length - 1].r === 0)
+                // dif moving backwards reverse direction
+                let adjusted_direction = animation_buffer[animation_buffer.length - 1].r;
+                if (moveBuffer[i] === 'b')
+                {
+                    switch (adjusted_direction) {
+                        case 0:
+                            adjusted_direction = 180;
+                            break;
+                        case 90:
+                            adjusted_direction = 270;
+                            break;
+                        case 180:
+                            adjusted_direction = 0;
+                            break;
+                        case 270:
+                            adjusted_direction = 90;
+                            break;
+                    }
+                    console.log("movement: " + adjusted_direction);
+                }
+
+                // facing up
+                if (adjusted_direction === 0)
                 {
                     bot.gy--;
-                    if (bot.gy > 0)
+                    // hit obstacle
+                    console.log(bot.gy);
+                    if (containsObstacle(bot.gx, bot.gy))
                     {
-                        for (let j = 0; j < 100; j++)
+                        for (let j = 0; j < 25; j++)
                         {
                             animation_buffer.push({
                                 x: animation_buffer[animation_buffer.length - 1].x,
@@ -189,8 +236,32 @@
                                 r: animation_buffer[animation_buffer.length - 1].r
                             });
                         }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 25; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gy++;
                     }
-                    else
+                    // hit endpoint
+                    else if (containsDub(bot.gx, bot.gy))
+                    {
+                        continue;
+                    }
+                    // out of bounds
+                    else if (!(bot.gy >= 0))
                     {
                         for (let j = 0; j < 13; j++)
                         {
@@ -219,13 +290,28 @@
 
                         bot.gy++;
                     }
-                }
-                else if (animation_buffer[animation_buffer.length - 1].r === 90)
-                {
-                    bot.gx++;
-                    if (bot.gx < 5)
+                    // in bounds
+                    else
                     {
                         for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                }
+                // facing right
+                else if (adjusted_direction === 90)
+                {
+                    bot.gx++;
+
+                    // hit obstacle
+                    if (containsObstacle(bot.gx, bot.gy))
+                    {
+                        for (let j = 0; j < 25; j++)
                         {
                             animation_buffer.push({
                                 x: animation_buffer[animation_buffer.length - 1].x + 2,
@@ -233,8 +319,32 @@
                                 r: animation_buffer[animation_buffer.length - 1].r
                             });
                         }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 25; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x - 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gx--;
                     }
-                    else
+                    // hit endpoint
+                    else if (containsDub(bot.gx, bot.gy))
+                    {
+                        continue;
+                    }
+                    // out of bounds
+                    else if (!(bot.gx < grid_size))
                     {
                         for (let j = 0; j < 13; j++)
                         {
@@ -263,13 +373,28 @@
 
                         bot.gx--;
                     }
-                }
-                else if (animation_buffer[animation_buffer.length - 1].r === 180)
-                {
-                    bot.gy++;
-                    if (bot.gy < 5)
+                    // in bounds
+                    else
                     {
                         for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                }
+                // facing down
+                else if (adjusted_direction === 180)
+                {
+                    bot.gy++;
+
+                    // hit obstacle
+                    if (containsObstacle(bot.gx, bot.gy))
+                    {
+                        for (let j = 0; j < 25; j++)
                         {
                             animation_buffer.push({
                                 x: animation_buffer[animation_buffer.length - 1].x,
@@ -277,8 +402,32 @@
                                 r: animation_buffer[animation_buffer.length - 1].r
                             });
                         }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 25; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y - 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gy--;
                     }
-                    else
+                    // hit endpoint
+                    else if (containsDub(bot.gx, bot.gy))
+                    {
+                        continue;
+                    }
+                    // out of bounds
+                    else if (!(bot.gy < grid_size))
                     {
                         for (let j = 0; j < 13; j++)
                         {
@@ -307,14 +456,28 @@
 
                         bot.gy--;
                     }
-                }
-                else if (animation_buffer[animation_buffer.length - 1].r === 270)
-                {
-                    bot.gx--;
-                    console.log(bot.gx);
-                    if (bot.gx > 0)
+                    // in bounds
+                    else
                     {
                         for (let j = 0; j < 100; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y + 2,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                    }
+                }
+                // facing left
+                else if (adjusted_direction === 270)
+                {
+                    bot.gx--;
+
+                    // hit obstacle
+                    if (containsObstacle(bot.gx, bot.gy))
+                    {
+                        for (let j = 0; j < 25; j++)
                         {
                             animation_buffer.push({
                                 x: animation_buffer[animation_buffer.length - 1].x - 2,
@@ -322,8 +485,32 @@
                                 r: animation_buffer[animation_buffer.length - 1].r
                             });
                         }
+                        for (let j = 0; j < 20; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+                        for (let j = 0; j < 25; j++)
+                        {
+                            animation_buffer.push({
+                                x: animation_buffer[animation_buffer.length - 1].x + 2,
+                                y: animation_buffer[animation_buffer.length - 1].y,
+                                r: animation_buffer[animation_buffer.length - 1].r
+                            });
+                        }
+
+                        bot.gx++;
                     }
-                    else
+                    // hit endpoint
+                    else if (containsDub(bot.gx, bot.gy))
+                    {
+                        continue;
+                    }
+                    // out of bounds
+                    else if (!(bot.gx > 0))
                     {
                         for (let j = 0; j < 13; j++)
                         {
@@ -352,148 +539,8 @@
 
                         bot.gx++;
                     }
-                }
-            }
-            // move backwards based on in-progress heading
-            else if (moveBuffer[i] === 'b')
-            {
-                if (animation_buffer[animation_buffer.length - 1].r === 180)
-                {
-                    bot.gy--;
-                    if (bot.gy > 0)
-                    {
-                        for (let j = 0; j < 100; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y - 2,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                    }
+                    // in bounds
                     else
-                    {
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y - 2,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 20; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y + 2,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-
-                        bot.gy++;
-                    }
-                }
-                else if (animation_buffer[animation_buffer.length - 1].r === 270)
-                {
-                    bot.gx++;
-                    if (bot.gx < 5)
-                    {
-                        for (let j = 0; j < 100; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x + 2,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                    }
-                    else
-                    {
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x + 2,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 20; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x - 2,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-
-                        bot.gx--;
-                    }
-                }
-                else if (animation_buffer[animation_buffer.length - 1].r === 0)
-                {
-                    bot.gy++;
-                    if (bot.gy < 5)
-                    {
-                        for (let j = 0; j < 100; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y + 2,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                    }
-                    else
-                    {
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y + 2,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 20; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y - 2,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-
-                        bot.gy--;
-                    }
-                }
-                else if (animation_buffer[animation_buffer.length - 1].r === 90)
-                {
-                    bot.gx--;
-                    console.log(bot.gx);
-                    if (bot.gx > 0)
                     {
                         for (let j = 0; j < 100; j++)
                         {
@@ -503,35 +550,6 @@
                                 r: animation_buffer[animation_buffer.length - 1].r
                             });
                         }
-                    }
-                    else
-                    {
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x - 2,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 20; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-                        for (let j = 0; j < 13; j++)
-                        {
-                            animation_buffer.push({
-                                x: animation_buffer[animation_buffer.length - 1].x + 2,
-                                y: animation_buffer[animation_buffer.length - 1].y,
-                                r: animation_buffer[animation_buffer.length - 1].r
-                            });
-                        }
-
-                        bot.gx++;
                     }
                 }
             }
@@ -568,6 +586,8 @@
                 }
             }
 
+            console.log("grid position: " + bot.gx + ", " + bot.gy)
+
             for (let j = 0; j < 5; j++)
             {
                 animation_buffer.push(animation_buffer[animation_buffer.length - 1]);
@@ -598,7 +618,7 @@
     {
         if (path.length > 1 && inMotion)
         {
-            clearCanvas();
+            resetCanvas();
             drawImage(bot.img, path[0].x, path[0].y, path[0].r);
             path.shift();
             if (isNiceCoord(path[0].x) && isNiceCoord(path[0].y) && isNiceRot(path[0].r))
