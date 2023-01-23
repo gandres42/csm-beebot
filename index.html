@@ -53,7 +53,7 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
     let inMotion = false;
-    let moveBuffer = [];
+    let moveBuffer = ['r', 'f', 'f', 'r', 'f', 'f', 'f', 'l', 'f'];
     let bot = {
         x: 100,
         y: 100,
@@ -183,6 +183,9 @@
 
     function compileMovement()
     {
+        const rig_bot_gx = bot.gx;
+        const rig_bot_gy = bot.gy;
+
         // reset animation buffer
         let animation_buffer = [];
         while (animation_buffer.length > 0)
@@ -194,8 +197,6 @@
         // compile movement buffer into animation sequence and end message
         for (let i = 0; i < moveBuffer.length; i++)
         {
-            // console.log(animation_buffer);
-            console.log(animation_buffer[animation_buffer.length - 1].r);
             // move forward or backwards based on in-progress heading
             if (moveBuffer[i] === 'f' || moveBuffer[i] === 'b')
             {
@@ -218,7 +219,6 @@
                             break;
                     }
                 }
-
                 // facing up
                 if (adjusted_direction === 0)
                 {
@@ -253,11 +253,6 @@
                         }
 
                         bot.gy++;
-                    }
-                    // hit endpoint
-                    else if (containsDub(bot.gx, bot.gy))
-                    {
-                        continue;
                     }
                     // out of bounds
                     else if (!(bot.gy >= 0))
@@ -337,11 +332,6 @@
 
                         bot.gx--;
                     }
-                    // hit endpoint
-                    else if (containsDub(bot.gx, bot.gy))
-                    {
-                        continue;
-                    }
                     // out of bounds
                     else if (!(bot.gx < grid_size))
                     {
@@ -419,11 +409,6 @@
                         }
 
                         bot.gy--;
-                    }
-                    // hit endpoint
-                    else if (containsDub(bot.gx, bot.gy))
-                    {
-                        continue;
                     }
                     // out of bounds
                     else if (!(bot.gy < grid_size))
@@ -503,11 +488,6 @@
 
                         bot.gx++;
                     }
-                    // hit endpoint
-                    else if (containsDub(bot.gx, bot.gy))
-                    {
-                        continue;
-                    }
                     // out of bounds
                     else if (!(bot.gx > 0))
                     {
@@ -585,13 +565,19 @@
                 }
             }
 
-            console.log("grid position: " + bot.gx + ", " + bot.gy)
+            // console.log("grid position: " + bot.gx + ", " + bot.gy)
 
+            // add delay after each movement
             for (let j = 0; j < 5; j++)
             {
                 animation_buffer.push(animation_buffer[animation_buffer.length - 1]);
             }
         }
+
+        // reset current bot position
+        bot.gx = rig_bot_gx;
+        bot.gy = rig_bot_gy;
+        console.log(bot.gx + ", " + bot.gy);
 
         // allow motion and kick off animation cycle
         inMotion = true;
@@ -629,9 +615,17 @@
                 bot.gy = c2g(bot.y);
                 console.log(bot.gx + ", " + bot.gy);
             }
-            requestAnimationFrame(function () {
-                move(path)
-            });
+
+            if (containsDub(bot.gx, bot.gy))
+            {
+                alert("https://en.wikipedia.org/wiki/Chair");
+            }
+            else
+            {
+                requestAnimationFrame(function () {
+                    move(path);
+                });
+            }
         }
     }
 
